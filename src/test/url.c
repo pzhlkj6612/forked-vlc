@@ -286,6 +286,11 @@ int main (void)
     test_url_parse("p://h?o=v", "p", NULL, NULL, "h", 0, NULL, "o=v");
     test_url_parse("p://h:123?o=v", "p", NULL, NULL, "h", 123, NULL, "o=v");
     test_url_parse("p://u:p@h:123?o=v", "p", "u", "p", "h", 123, NULL, "o=v");
+    /* Passwords with special characters (e.g. '@') encoded as %40 */
+    test_url_parse("smb://user:p%40ss@host/share", "smb", "user", "p@ss",
+                   "host", 0, "/share", NULL);
+    test_url_parse("smb://user:p%40ss%40word@host/share", "smb", "user",
+                   "p@ss@word", "host", 0, "/share", NULL);
     test_url_parse("p://caf\xc3\xa9.example.com", "p", NULL, NULL,
                    "xn--caf-dma.example.com", 0, NULL, NULL);
     test_url_parse("p://caf%C3%A9.example.com", "p", NULL, NULL,
