@@ -889,20 +889,20 @@ Open(vlc_object_t *p_obj)
                            sys->encoded_url.i_port, &resolved_host);
 
     /* smb2_* functions need a decoded url. Re compose the url from the
-     * modified sys->encoded_url (with the resolved host). */
+     * modified sys->encoded_url (with the resolved host).
+     * Strip credentials from the URL since they are handled separately
+     * via vlc_credential/smb2_set_password. Including decoded credentials
+     * (e.g. passwords containing '@') would break smb2_parse_url(). */
     char *url;
     if (ret == -EINTR)
         goto error;
-    else if (ret == 0)
-    {
-        vlc_url_t resolved_url = sys->encoded_url;
-        resolved_url.psz_host = resolved_host;
-        url = vlc_uri_compose(&resolved_url);
-    }
-    else
-    {
-        url = vlc_uri_compose(&sys->encoded_url);
-    }
+
+    vlc_url_t compose_url = sys->encoded_url;
+    compose_url.psz_username = NULL;
+    compose_url.psz_password = NULL;
+    if (ret == 0)
+        compose_url.psz_host = resolved_host;
+    url = vlc_uri_compose(&compose_url);
     if (!vlc_uri_decode(url))
     {
         free(url);
