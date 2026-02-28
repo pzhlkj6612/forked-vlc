@@ -92,6 +92,7 @@ FocusScope{
 
     on_ShowTopBarChanged: _layout()
     on_ShowCenterTextChanged: _layout()
+    onResumeVisibleChanged: _layout()
 
     // Functions
 
@@ -144,8 +145,6 @@ FocusScope{
             playlistGroup.anchors.topMargin = 0
             playlistGroup.extraRightMargin = Qt.binding(function() { return width - csdDecorations.x })
 
-
-            implicitHeight = lineHeight
             offset += lineHeight
 
         } else {
@@ -191,6 +190,12 @@ FocusScope{
 
         implicitHeight = offset
         reservedHeight = offset
+
+        // Ensure logoOrResume is tall enough for the resume dialog buttons
+        // to remain within the hit-testable area, without affecting the
+        // TopBar's own implicitHeight (which drives the window size).
+        if (resumeVisible)
+            logoOrResume.height = Math.max(logoOrResume.height, resumeDialog.implicitHeight)
     }
 
     // Children
@@ -240,19 +245,12 @@ FocusScope{
         implicitWidth: resumeVisible ? resumeDialog.implicitWidth
                                      : logoGroup.implicitWidth
 
-        implicitHeight: {
-            if (root.resumeVisible) {
-                // Only if there are multiple lines use `resumeDialog`'s implicit height, otherwise the video
-                // window may get resized by few pixels unnecessarily when `resumeDialog` is no longer visible.
-                if (resumeDialog.implicitHeight >= (logoGroup.implicitHeight + resumeDialog.baselineOffset))
-                    return resumeDialog.implicitHeight
-                else
-                    return logoGroup.implicitHeight
-            } else if (_showTopBar)
-                return logoGroup.implicitHeight
-            else
-                return 0
-        }
+        // Always use logoGroup's implicit height to prevent the video window from
+        // being resized when the resume dialog is shown or hidden. The resume dialog
+        // may overflow logoOrResume's bounds, but that is acceptable as the dialog is
+        // a temporary overlay. logoOrResume.height is adjusted separately in _layout()
+        // so that the resume dialog buttons remain within the hit-testable area.
+        implicitHeight: (_showTopBar || root.resumeVisible) ? logoGroup.implicitHeight : 0
 
         onImplicitHeightChanged: root._layout()
 
